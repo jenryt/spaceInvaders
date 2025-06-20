@@ -12,6 +12,7 @@ let score, scoreTxt, alien, bomb, gun, bullet, barrier;
 let alienHitTime = 0;
 let isGameOver = false;
 let gameOverTime = 0;
+let confirmShown = false;
 
 function preload() {
   backgroundImg = loadImage("assets/galaxy_grassField.png");
@@ -53,13 +54,20 @@ function draw() {
   text(score, scoreTxt.x, scoreTxt.y); // Initialize the scoreText on top right corner wirh the iniitial content of zero.
 
   // Check if play again
-  if (isGameOver && millis() - gameOverTime > 500) {
-    isGameOver = false;
-    playAgain();
+  if (isGameOver) {
+    gameOverTxt();
+    if (millis() - gameOverTime > 500 && !confirmShown) {
+      playAgain();
+    }
   }
 }
 
 function resetGame() {
+  alienHitTime = 0;
+  isGameOver = false;
+  gameOverTime = 0;
+  confirmShown = false;
+
   // Score
   score = 0;
   scoreTxt = {
@@ -96,18 +104,20 @@ function resetGame() {
 
 function handleAlien() {
   // Alien setup
-  alien.x += alien.speed; // Set alien's horizontal traveling speed to 0.2
-  console.log("speed no turn" + alien.speed);
+  if (!isGameOver) {
+    alien.x += alien.speed; // Set alien's horizontal traveling speed to 0.2
+    console.log("speed no turn" + alien.speed);
 
-  /* Alien movement
-   * When alien reach the edge on x-axis, reverse the traveling direction,
-   * lower by 9 on the y-axis (closer to gun),
-   * and increase the traveling spped by 1.2 times.
-   */
-  if (alien.x > alien.xMax || alien.x < alien.xMin) {
-    alien.speed = -alien.speed * 1.2;
-    alien.y += 54;
-    console.log("speed after turn" + alien.speed);
+    /* Alien movement
+     * When alien reach the edge on x-axis, reverse the traveling direction,
+     * lower by 9 on the y-axis (closer to gun),
+     * and increase the traveling spped by 1.2 times.
+     */
+    if (alien.x > alien.xMax || alien.x < alien.xMin) {
+      alien.speed = -alien.speed * 1.2;
+      alien.y += 54;
+      console.log("speed after turn" + alien.speed);
+    }
   }
 
   if (alien.visible) {
@@ -119,62 +129,72 @@ function handleAlien() {
       alien.h
     );
   } else {
-    handleAlienReappear();
-    console.log("speed after reappear" + alien.speed);
+    if (!isGameOver) {
+      handleAlienReappear();
+      console.log("speed after reappear" + alien.speed);
+    }
   }
 
   // Check if alien hits the gun (Game over)
-  if (hit(alien, gun)) {
+  if (!isGameOver && hit(alien, gun)) {
     isGameOver = true;
     gameOverTime = millis();
-    gameOverTxt();
+    // gameOverTxt();
   }
 }
 
 function handleGun() {
   // Gun setup
   // Gun movement with edge detection and vibration effect
-  if (keyIsDown(RIGHT_ARROW))
-    if (gun.x >= gun.xMax) {
-      gun.x = gun.xMax;
-      gun.x += random(-1, 1); // Vibration effect to remind users that they have reach the right edge
-    } else gun.x += GUN_SPEED; // Move the gun to the right
+  if (!isGameOver) {
+    if (keyIsDown(RIGHT_ARROW))
+      if (gun.x >= gun.xMax) {
+        gun.x = gun.xMax;
+        gun.x += random(-1, 1); // Vibration effect to remind users that they have reach the right edge
+      } else gun.x += GUN_SPEED; // Move the gun to the right
 
-  if (keyIsDown(LEFT_ARROW))
-    if (gun.x <= gun.xMin) {
-      gun.x = gun.xMin;
-      gun.x += random(-1, 1); // Vibration effect to remind users that they have reach the left edge
-    } else gun.x -= GUN_SPEED; // Move the gun to the left
-
+    if (keyIsDown(LEFT_ARROW))
+      if (gun.x <= gun.xMin) {
+        gun.x = gun.xMin;
+        gun.x += random(-1, 1); // Vibration effect to remind users that they have reach the left edge
+      } else gun.x -= GUN_SPEED; // Move the gun to the left
+  } else {
+    if (keyIsDown(RIGHT_ARROW) || keyIsDown(LEFT_ARROW)) {
+      gun.x += random(-1, 1);
+    }
+  }
   image(gunImg, gun.x - gun.w / 2, gun.y - gun.h / 2, gun.w, gun.h);
 }
 
 function handleBomb() {
   // When alien cruise over gun, drop the bomb
-  if (alien.visible && !bomb.inAction && overHead(alien, gun)) {
+  if (!isGameOver && alien.visible && !bomb.inAction && overHead(alien, gun)) {
     bomb.x = alien.x;
     bomb.y = alien.y + 36;
     bomb.inAction = true;
   }
   // Bomb movement
   if (bomb != null && bomb.inAction) {
-    bomb.y += BOMB_SPEED; // Bomb travel downward toward gun.
-    image(bombImg, bomb.x - bomb.w / 2, bomb.y - bomb.h / 2, bomb.w, bomb.h);
+    if (!isGameOver) {
+      bomb.y += BOMB_SPEED; // Bomb travel downward toward gun.
 
-    if (bomb.y > height) {
-      // Bomb delete when it goes off the screen.
-      bomb.inAction = false;
-      resetBomb();
-    } else if (hit(bomb, barrier)) {
-      // Bomb is deleted when it hits the barrier.
-      bomb.inAction = false;
-      resetBomb();
-      barrier.hit = true;
-    } else if (hit(bomb, gun)) {
-      isGameOver = true;
-      gameOverTime = millis();
-      gameOverTxt();
+      if (bomb.y > height) {
+        // Bomb delete when it goes off the screen.
+        bomb.inAction = false;
+        resetBomb();
+      } else if (hit(bomb, barrier)) {
+        // Bomb is deleted when it hits the barrier.
+        bomb.inAction = false;
+        resetBomb();
+        barrier.hit = true;
+      } else if (hit(bomb, gun)) {
+        isGameOver = true;
+        gameOverTime = millis();
+        // gameOverTxt();
+      }
     }
+
+    image(bombImg, bomb.x - bomb.w / 2, bomb.y - bomb.h / 2, bomb.w, bomb.h);
   }
 }
 
@@ -184,7 +204,7 @@ function handleBullet() {
    * the bullet's x coordinate is set to gun's x coordinate at the moment "space" is pressed.
    * bulletInAct then being set to true
    */
-  if (keyIsDown(32) && !bullet.inAction) {
+  if (!isGameOver && keyIsDown(32) && !bullet.inAction) {
     bullet.x = gun.x;
     bullet.y = gun.y - gun.h / 2;
     bullet.inAction = true; // Set bulletInAct to true when a bullet is shot
@@ -192,7 +212,7 @@ function handleBullet() {
   }
 
   // Bullet movement
-  if (bullet != null && bullet.inAction) {
+  if (!isGameOver && bullet != null && bullet.inAction) {
     bullet.y -= BULLET_SPEED; // Bullet travel straight upward toward the alien
     push();
     translate(bullet.x, bullet.y);
@@ -231,6 +251,8 @@ function handleBullet() {
 
 function playAgain() {
   let playAgain = confirm("Would you like to play again?");
+  confirmShown = true;
+
   if (playAgain) {
     resetGame();
     loop(); // If users click yes to play agian, restart the app.

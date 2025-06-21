@@ -48,11 +48,8 @@ function setup() {
   resetGame();
 }
 
-// ct.image() -> image(img, x, y)
-// ct.image(img, x, y, size) -> image(img, x, y, width, height);
 function draw() {
   background(backgroundImg);
-  //   console.log("alienHit:", alien.hit, "alien.visible:", alien.visible);
 
   handleAlien();
   handleGun();
@@ -91,6 +88,7 @@ function draw() {
   }
 }
 
+// === Game Control Functions ===
 function resetGame() {
   alienHitTime = 0;
   isGameOver = false;
@@ -132,11 +130,43 @@ function resetGame() {
   barrier = { x: 270, y: 500, w: 80, h: 54, hit: false };
 }
 
+function playAgain() {
+  let playAgain = confirm("Would you like to play again?");
+  confirmShown = true;
+
+  if (playAgain) {
+    resetGame();
+    loop(); // If users click yes to play agian, restart the app.
+  } else {
+    noLoop();
+  } // If users click no, end the app.
+}
+
+function gameOverTxt() {
+  push();
+  textSize(60);
+  fill(TEXT_COLOR);
+  textAlign(CENTER, CENTER);
+  text("GAME OVER!", 0.5 * width, 0.3 * height);
+  pop();
+}
+
+function togglePause() {
+  if (isPaused) {
+    pauseBtn.html('<i class="fas fa-pause"></i>');
+    loop();
+  } else {
+    pauseBtn.html('<i class="fas fa-play"></i>');
+    noLoop();
+  }
+  isPaused = !isPaused;
+}
+
+// === Main Game Logic Handlers ===
 function handleAlien() {
   // Alien setup
   if (!isGameOver) {
     alien.x += alien.speed; // Set alien's horizontal traveling speed to 0.2
-    console.log("speed no turn" + alien.speed);
 
     /* Alien movement
      * When alien reach the edge on x-axis, reverse the traveling direction,
@@ -146,7 +176,6 @@ function handleAlien() {
     if (alien.x > alien.xMax || alien.x < alien.xMin) {
       alien.speed = -alien.speed * 1.2;
       alien.y += 54;
-      console.log("speed after turn" + alien.speed);
     }
   }
 
@@ -161,7 +190,6 @@ function handleAlien() {
   } else {
     if (!isGameOver) {
       handleAlienReappear();
-      console.log("speed after reappear" + alien.speed);
     }
   }
 
@@ -170,6 +198,23 @@ function handleAlien() {
     isGameOver = true;
     gameOverTime = millis();
     // gameOverTxt();
+  }
+}
+
+function handleAlienReappear() {
+  /*
+   * Alien's behavior when being hit
+   * Alien will temporary disappear and reappear soon after disappearing.
+   * Alien will return to the top left initial postion,
+   * and its travel speed will be reset to its initial travel speed.
+   */
+  // Delay by 0.5 second to make alien reappear after being hit
+  if (alien.hit && millis() - alienHitTime > 500) {
+    alien.x = ALIEN_INIT_X; // Set alien back to initial position where x = 40.
+    alien.y = ALIEN_INIT_Y; // Set alien back to initial position where y = 60.
+    alien.speed = ALIEN_INIT_SPEED; // Set alien's travel speed to its initial travel speed.
+    alien.visible = true;
+    alien.hit = false;
   }
 }
 
@@ -238,7 +283,6 @@ function handleBullet() {
     bullet.x = gun.x;
     bullet.y = gun.y - gun.h / 2;
     bullet.inAction = true; // Set bulletInAct to true when a bullet is shot
-    console.log(bullet == null);
   }
 
   // Bullet movement
@@ -271,7 +315,6 @@ function handleBullet() {
       resetBullet();
     } else if (hit(bullet, alien)) {
       alienHitTime = millis(); // Recording the hit time when alien get hit for later use.
-      console.log("in handleBullet - alien hit time: " + alienHitTime);
       /* Scoring logic
        * If the bullet hits the alien,
        * score will increase by one, and the bullet will reset to null
@@ -286,64 +329,7 @@ function handleBullet() {
   }
 }
 
-function playAgain() {
-  let playAgain = confirm("Would you like to play again?");
-  confirmShown = true;
-
-  if (playAgain) {
-    resetGame();
-    loop(); // If users click yes to play agian, restart the app.
-  } else {
-    noLoop();
-  } // If users click no, end the app.
-}
-
-function gameOverTxt() {
-  push();
-  textSize(60);
-  fill(TEXT_COLOR);
-  textAlign(CENTER, CENTER);
-  text("GAME OVER!", 0.5 * width, 0.3 * height);
-  pop();
-}
-
-function resetBullet() {
-  bullet = { x: 0, y: 0, w: 40, h: 36, inAction: false };
-}
-
-function resetBomb() {
-  bomb = { x: 0, y: 0, w: 40, h: 36, inAction: false };
-}
-
-function handleAlienReappear() {
-  /*
-   * Alien's behavior when being hit
-   * Alien will temporary disappear and reappear soon after disappearing.
-   * Alien will return to the top left initial postion,
-   * and its travel speed will be reset to its initial travel speed.
-   */
-  // Delay by 0.5 second to make alien reappear after being hit
-  if (alien.hit && millis() - alienHitTime > 500) {
-    alien.x = ALIEN_INIT_X; // Set alien back to initial position where x = 40.
-    alien.y = ALIEN_INIT_Y; // Set alien back to initial position where y = 60.
-    alien.speed = ALIEN_INIT_SPEED; // Set alien's travel speed to its initial travel speed.
-    alien.visible = true;
-    alien.hit = false;
-  }
-}
-
-function togglePause() {
-  if (isPaused) {
-    pauseBtn.html('<i class="fas fa-pause"></i>');
-    loop();
-  } else {
-    pauseBtn.html('<i class="fas fa-play"></i>');
-    noLoop();
-  }
-  isPaused = !isPaused;
-}
-
-// === Utility functions ===
+// === Utility/ Helper Functions ===
 function hit(obj1, obj2) {
   // set boundary for obj1
   let left1 = obj1.x - obj1.w / 2;
@@ -380,4 +366,12 @@ function btnStyle(obj) {
   obj.style("color", "white");
   obj.style("background-color", "rgba(255, 255, 255, 0.3)");
   obj.style("border-radius", "6px");
+}
+
+function resetBullet() {
+  bullet = { x: 0, y: 0, w: 40, h: 36, inAction: false };
+}
+
+function resetBomb() {
+  bomb = { x: 0, y: 0, w: 40, h: 36, inAction: false };
 }

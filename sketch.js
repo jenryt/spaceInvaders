@@ -7,12 +7,24 @@ const ALIEN_INIT_X = 40;
 const ALIEN_INIT_Y = 60;
 const ALIEN_INIT_SPEED = 1;
 
+// === Assets ===
 let backgroundImg, alienImg, bombImg, gunImg, bulletImg, barrierImg;
-let score, scoreTxt, alien, bomb, gun, bullet, barrier;
+
+// === Canvas/UI setup ===
+let score, scoreTxt;
+let pauseBtn, restartBtn;
+
+// === Game objects ===
+let alien, bomb, gun, bullet, barrier;
+
+// === Timers ===
 let alienHitTime = 0;
-let isGameOver = false;
 let gameOverTime = 0;
+
+// === Flags ===
+let isGameOver = false;
 let confirmShown = false;
+let isPaused = false;
 
 function preload() {
   backgroundImg = loadImage("assets/galaxy_grassField.png");
@@ -25,6 +37,14 @@ function preload() {
 
 function setup() {
   createCanvas(540, 720);
+  restartBtn = createButton('<i class="fa-solid fa-rotate-right"></i>');
+  restartBtn.position(30, 30);
+  btnStyle(restartBtn);
+
+  pauseBtn = createButton('<i class="fa-solid fa-pause"></i>');
+  pauseBtn.position(65, 30);
+  btnStyle(pauseBtn);
+
   resetGame();
 }
 
@@ -53,8 +73,17 @@ function draw() {
   textAlign(RIGHT, TOP);
   text(score, scoreTxt.x, scoreTxt.y); // Initialize the scoreText on top right corner wirh the iniitial content of zero.
 
-  // Check if play again
+  restartBtn.mousePressed(() => {
+    resetGame();
+    loop();
+  });
+
+  pauseBtn.mousePressed(() => {
+    togglePause();
+  });
+
   if (isGameOver) {
+    // Check if play again
     gameOverTxt();
     if (millis() - gameOverTime > 500 && !confirmShown) {
       playAgain();
@@ -67,6 +96,7 @@ function resetGame() {
   isGameOver = false;
   gameOverTime = 0;
   confirmShown = false;
+  isPaused = false;
 
   // Score
   score = 0;
@@ -295,7 +325,18 @@ function handleAlienReappear() {
   }
 }
 
-// Utility functions
+function togglePause() {
+  if (isPaused) {
+    pauseBtn.html('<i class="fas fa-pause"></i>');
+    loop();
+  } else {
+    pauseBtn.html('<i class="fas fa-play"></i>');
+    noLoop();
+  }
+  isPaused = !isPaused;
+}
+
+// === Utility functions ===
 function hit(obj1, obj2) {
   // set boundary for obj1
   let left1 = obj1.x - obj1.w / 2;
@@ -324,4 +365,12 @@ function overHead(obj1, obj2) {
   let right2 = obj2.x + obj2.w / 2;
 
   return right1 >= left2 && left1 <= right2;
+}
+
+function btnStyle(obj) {
+  obj.size(27, 27);
+  obj.style("border", "none");
+  obj.style("color", "white");
+  obj.style("background-color", "rgba(255, 255, 255, 0.3)");
+  obj.style("border-radius", "6px");
 }

@@ -244,11 +244,18 @@ function handleBullet() {
   // Bullet movement
   if (!isGameOver && bullet != null && bullet.inAction) {
     bullet.y -= BULLET_SPEED; // Bullet travel straight upward toward the alien
-    push();
-    translate(bullet.x, bullet.y);
-    rotate(HALF_PI); // to rotate the image by 90°
-    image(bulletImg, -bullet.w / 2, -bullet.h / 2, bullet.w, bullet.h); // Initialize the bullet and position above the gun.
-    pop();
+    // push();
+    // translate(bullet.x, bullet.y);
+    // rotate(HALF_PI); // to rotate the image by 90°
+    // image(bulletImg, -bullet.w / 2, -bullet.h / 2, bullet.w, bullet.h); // Initialize the bullet and position above the gun.
+    // pop();
+    image(
+      bulletImg,
+      bullet.x - bullet.w / 2,
+      bullet.y - bullet.h / 2,
+      bullet.w,
+      bullet.h
+    ); // Initialize the bullet and position above the gun.
 
     // Behavior if bullet goes off the screen
     if (bullet.y < 0) {

@@ -1,9 +1,12 @@
 ![License: MIT](https://img.shields.io/badge/license-MIT-000080)
+![Touch Friendly](https://img.shields.io/badge/touch--friendly-yes-bcd235)
 
 # WHEEK Space Invader
 
 A p5.js browser game adapted from a legacy Java homework assignment.  
 Blast aliens with guinea pig poop and dodge falling hay bales!
+
+> Originally built in Java — now fully reimagined in p5.js with responsive scaling and touch controls!
 
 ## Features
 
@@ -11,11 +14,13 @@ Blast aliens with guinea pig poop and dodge falling hay bales!
 - Pause and Restart buttons
 - Barrier protection mechanics
 - Whimsical guinea pig theme
+- ✅ Mobile-friendly: Touch buttons for movement and fire
 
 ## Controls
 
 - `←` `→` Arrow keys to move
 - `Space` to shoot
+- On touch devices: use on-screen buttons
 
 ## Game Story
 
@@ -45,7 +50,9 @@ No copyrighted or third-party media was used.
 
 ## Legacy Version
 
-The original Java version of this game (from a homework assignment) is available in the [`original/`](./original/) folder for reference.
+The original version of this game was created in Java as part of a programming assignment.  
+It served as the foundation for this modern p5.js remake, which now includes touch support, screen scaling, animations, and visual upgrades.  
+The original Java code is available in the [`original/`](./original/) folder for reference.
 
 ## License
 

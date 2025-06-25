@@ -6,7 +6,10 @@ const BOMB_SPEED = 3;
 const ALIEN_INIT_X = 40;
 const ALIEN_INIT_Y = 60;
 const ALIEN_INIT_SPEED = 1;
+const ALIEN_STEP = 54;
 const GAME_Y_MAX = 634; // the max of y where game object can go
+const BARRIER_SPEED = 1.2;
+const OVERLAP_MARGIN = 7.5; // Shrinks each object’s collision boundary by 7.5 * 2 px on each side
 
 // === Assets ===
 let backgroundImg, alienImg, bombImg, gunImg, bulletImg, barrierImg;
@@ -109,14 +112,14 @@ function draw() {
   handleGun();
   handleBomb();
   handleBullet();
-
-  image(
-    barrierImg,
-    barrier.x - barrier.w / 2,
-    barrier.y - barrier.h / 2,
-    barrier.w,
-    barrier.h
-  ); // Setting a barrier that is horizontally centered, and a little above the gun
+  handleBarrier();
+  // image(
+  //   barrierImg,
+  //   barrier.x - barrier.w / 2,
+  //   barrier.y - barrier.h / 2,
+  //   barrier.w,
+  //   barrier.h
+  // ); // Setting a barrier that is horizontally centered, and a little above the gun
 
   // Update score
   textSize(scoreTxt.size);
@@ -177,7 +180,16 @@ function resetGame() {
   // Bullet
   resetBullet();
   // Barrier
-  barrier = { x: 270, y: 500, w: 80, h: 54, hit: false };
+  barrier = {
+    x: 270,
+    y: 500,
+    w: 80,
+    h: 54,
+    speed: BARRIER_SPEED,
+    xMin: 40,
+    xMax: 500,
+    hit: false,
+  };
 }
 
 function playAgain() {
@@ -225,7 +237,7 @@ function handleAlien() {
      */
     if (alien.x > alien.xMax || alien.x < alien.xMin) {
       alien.speed = -alien.speed * 1.2;
-      alien.y += 54;
+      alien.y += ALIEN_STEP;
     }
   }
 
@@ -295,7 +307,7 @@ function handleBomb() {
   // When alien cruise over gun, drop the bomb
   if (!isGameOver && alien.visible && !bomb.inAction && overHead(alien, gun)) {
     bomb.x = alien.x;
-    bomb.y = alien.y + 36;
+    bomb.y = alien.y + alien.h / 2 + bomb.h / 2;
     bomb.inAction = true;
   }
   // Bomb movement
@@ -354,24 +366,21 @@ function handleBullet() {
     // Behavior if bullet goes off the screen
     if (bullet.y < 0) {
       bullet.inAction = false;
-      bullet = null;
       resetBullet();
     }
     // Behavior if bullet hits the barrier
     else if (hit(bullet, barrier)) {
       bullet.inAction = false;
-      bullet = null;
       barrier.hit = true;
       resetBullet();
     } else if (hit(bullet, alien)) {
       alienHitTime = millis(); // Recording the hit time when alien get hit for later use.
       /* Scoring logic
        * If the bullet hits the alien,
-       * score will increase by one, and the bullet will reset to null
+       * score will increase by one, and the bullet will be reset
        */
       score++; // Increase the score by 1 everytime bullet hits the alien
       bullet.inAction = false;
-      bullet = null;
       alien.hit = true;
       alien.visible = false; // Set the alien.visible to false to make alien disappear.
       resetBullet();
@@ -379,19 +388,36 @@ function handleBullet() {
   }
 }
 
+function handleBarrier() {
+  if (!isGameOver) {
+    barrier.x += barrier.speed;
+    if (barrier.x >= barrier.xMax || barrier.x <= barrier.xMin) {
+      barrier.speed = -barrier.speed;
+    }
+  }
+
+  image(
+    barrierImg,
+    barrier.x - barrier.w / 2,
+    barrier.y - barrier.h / 2,
+    barrier.w,
+    barrier.h
+  ); // Setting a barrier that is horizontally centered, and a little above the gun
+}
+
 // === Utility/ Helper Functions ===
 function hit(obj1, obj2) {
   // set boundary for obj1
-  let left1 = obj1.x - obj1.w / 2;
-  let right1 = obj1.x + obj1.w / 2;
-  let top1 = obj1.y - obj1.h / 2;
-  let bottom1 = obj1.y + obj1.h / 2;
+  let left1 = obj1.x - (obj1.w / 2 - OVERLAP_MARGIN);
+  let right1 = obj1.x + (obj1.w / 2 - OVERLAP_MARGIN);
+  let top1 = obj1.y - (obj1.h / 2 - OVERLAP_MARGIN);
+  let bottom1 = obj1.y + (obj1.h / 2 - OVERLAP_MARGIN);
 
   // set boundary for obj2
-  let left2 = obj2.x - obj2.w / 2;
-  let right2 = obj2.x + obj2.w / 2;
-  let top2 = obj2.y - obj2.h / 2;
-  let bottom2 = obj2.y + obj2.h / 2;
+  let left2 = obj2.x - (obj2.w / 2 - OVERLAP_MARGIN);
+  let right2 = obj2.x + (obj2.w / 2 - OVERLAP_MARGIN);
+  let top2 = obj2.y - (obj2.h / 2 - OVERLAP_MARGIN);
+  let bottom2 = obj2.y + (obj2.h / 2 - OVERLAP_MARGIN);
 
   let horizontalOverlap = right1 >= left2 && left1 <= right2;
   let verticalOverlap = bottom1 >= top2 && top1 <= bottom2;
@@ -401,11 +427,11 @@ function hit(obj1, obj2) {
 
 function overHead(obj1, obj2) {
   // When two objects’ x-ranges overlap
-  let left1 = obj1.x - obj1.w / 2;
-  let right1 = obj1.x + obj1.w / 2;
+  let left1 = obj1.x - (obj1.w / 2 - OVERLAP_MARGIN);
+  let right1 = obj1.x + (obj1.w / 2 - OVERLAP_MARGIN);
 
-  let left2 = obj2.x - obj2.w / 2;
-  let right2 = obj2.x + obj2.w / 2;
+  let left2 = obj2.x - (obj2.w / 2 - OVERLAP_MARGIN);
+  let right2 = obj2.x + (obj2.w / 2 - OVERLAP_MARGIN);
 
   return right1 >= left2 && left1 <= right2;
 }
